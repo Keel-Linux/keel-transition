@@ -56,6 +56,17 @@ The list is renamed, never deleted, so phase 3 can put the original bytes
 back. Running
 .B \-\-apply
 twice leaves byte identical files.
+.PP
+.I turnkey.list
+is the name an appliance of the 18.x lineage carries. An appliance
+installed from the 19.0 media has none: its upstream archive lives in
+.IR /etc/apt/sources.list.d/*.sources ,
+deb822, in the same file as the Debian stanzas. Renaming one of those
+would disable Debian with it, so
+.B keel\-transition
+leaves them alone and names them in its report instead. They do no harm:
+the origin pin at 1001 makes the Keel archive win over them whatever
+else is configured.
 .SS Phase 3: \-\-rollback
 Undoes exactly those three changes and nothing else: the upstream list is
 renamed back, byte for byte, and the source and the pin are removed. A

@@ -19,17 +19,17 @@ never the project key.
 
 ## Measured at the first release
 
-2026-09-26, 94 tests, kcov 43 on Debian 13:
+2026-09-26, 98 tests, kcov 43 on Debian 13:
 
 | File | Lines | Covered | Percent |
 | --- | --- | --- | --- |
 | `bin/keel-transition` | 3 | 3 | 100.00 |
 | `lib/transition.sh` | 5 | 5 | 100.00 |
-| `lib/common.sh` | 64 | 64 | 100.00 |
+| `lib/common.sh` | 68 | 68 | 100.00 |
 | `lib/archive.sh` | 25 | 25 | 100.00 |
 | `lib/plan.sh` | 69 | 69 | 100.00 |
-| `lib/phases.sh` | 152 | 152 | 100.00 |
-| total | 318 | 318 | **100.00** |
+| `lib/phases.sh` | 162 | 162 | 100.00 |
+| total | 332 | 332 | **100.00** |
 
 Every exit code (0 to 8), every phase, every state of every file the tool
 owns (absent, written by us, written by somebody else; the upstream list

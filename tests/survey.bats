@@ -135,3 +135,28 @@ survey() { run "$REPO/bin/keel-transition" --root "$ROOT" "$@"; }
     survey
     [[ "$output" == *"key AD0964BE3F09DED469A3B6B2148E951314703180"* ]]
 }
+
+@test "the survey names the deb822 TurnKey sources it will not rename, and why" {
+    stub_keel
+    cat > "$ROOT/etc/apt/sources.list.d/sources.sources" << SRC
+Types: deb
+URIs: http://archive.turnkeylinux.org/debian
+Suites: trixie
+Components: main
+
+Types: deb
+URIs: http://deb.debian.org/debian
+Suites: trixie
+Components: main non-free-firmware
+SRC
+    survey
+    [[ "$output" == *"observe"*"sources.sources"* ]]
+    [[ "$output" == *"shared with Debian: left enabled"* ]]
+    [[ "$output" == *"the pin at 1001 is what makes the Keel archive win over them"* ]]
+}
+
+@test "the survey says nothing about deb822 sources when there are none" {
+    stub_keel
+    survey
+    [[ "$output" != *"left enabled"* ]]
+}

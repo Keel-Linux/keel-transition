@@ -140,3 +140,37 @@ two" ]
     run needs_root
     [ "$status" -ne 0 ]
 }
+
+@test "turnkey_sources finds the deb822 files that carry a TurnKey stanza" {
+    cat > "$ROOT/etc/apt/sources.list.d/sources.sources" << SRC
+Types: deb
+URIs: http://archive.turnkeylinux.org/debian
+Suites: trixie
+Components: main
+Signed-By: /usr/share/keyrings/tkl-archive-keyring.gpg
+
+Types: deb
+URIs: http://deb.debian.org/debian
+Suites: trixie
+Components: main non-free-firmware
+SRC
+    cat > "$ROOT/etc/apt/sources.list.d/debian-backports.sources" << SRC
+Types: deb
+URIs: http://deb.debian.org/debian
+Suites: trixie-backports
+Components: main
+SRC
+    run turnkey_sources
+    [ "$status" -eq 0 ]
+    [ "$output" = "$ROOT/etc/apt/sources.list.d/sources.sources" ]
+}
+
+@test "turnkey_sources is empty on a machine with none, and when the directory is gone" {
+    run turnkey_sources
+    [ "$status" -eq 0 ]
+    [ "$output" = "" ]
+    rm -r "$ROOT/etc/apt/sources.list.d"
+    run turnkey_sources
+    [ "$status" -eq 0 ]
+    [ "$output" = "" ]
+}

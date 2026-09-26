@@ -100,6 +100,30 @@ The pin is on the ``Origin`` of the signed ``Release``, not on the host
 name, so it follows the packages to any mirror; 1001 is above 1000 so a
 ``+keel1`` rebuild is kept even when upstream publishes a higher version.
 
+What a 19.0 appliance really looks like
+```````````````````````````````````````
+
+``turnkey.list`` is the name an appliance of the 18.x lineage carries. An
+appliance installed from the 19.0 media has none: its upstream archive
+lives in ``/etc/apt/sources.list.d/*.sources``, deb822, in the *same
+file* as the Debian stanzas (``sources.sources`` and
+``security.sources.sources`` each hold one of each). Renaming one of
+those would disable Debian along with TurnKey, so ``keel-transition``
+does not touch them. It names them instead, in every phase:
+
+.. code-block:: console
+
+     observe  /etc/apt/sources.list.d/sources.sources
+              TurnKey stanza in a deb822 file shared with Debian: left enabled
+     those files hold Debian stanzas too, so renaming one would disable Debian:
+     the pin at 1001 is what makes the Keel archive win over them.
+
+Leaving them enabled is not a correctness problem: the pin is on the
+origin, so any package the Keel archive carries wins at priority 1001
+whatever else is configured. Disabling a single stanza inside a shared
+deb822 file is a separate change, and it needs a decision note before it
+is made.
+
 Phase 3: ``--rollback``
 -----------------------
 
