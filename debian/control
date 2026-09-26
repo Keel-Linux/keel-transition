@@ -25,3 +25,30 @@ Description: GnuPG archive key of the Keel Linux package repository
  source, does not change apt's configuration and has no maintainer
  script: enabling the archive is keel-transition's job, and it is a
  separate decision.
+
+Package: keel-transition
+Architecture: all
+Depends:
+ keel,
+ keel-archive-keyring (>= ${source:Version}),
+ curl,
+ gpgv,
+ ${misc:Depends},
+Description: Move a TurnKey Linux 19.0 appliance onto the Keel Linux archive
+ keel-transition surveys a running TurnKey Linux 19.0 appliance, writes
+ the Keel instance spec that describes it, and switches its apt
+ configuration over to the Keel Linux archive, in three phases that are
+ each reversible and each reported file by file (BRIEF section 7):
+ .
+  * the survey, which is the default, runs keel inspect, writes
+    /etc/keel/instance.yaml when it is absent, reports every field it
+    could not infer and prints what --apply would change;
+  * --apply writes the deb822 source and the origin pin, and disables
+    the upstream turnkey.list by renaming it;
+  * --rollback undoes exactly that, restoring the upstream list byte for
+    byte.
+ .
+ It refuses to enable an archive whose Release no key in
+ keel-archive-keyring verifies, and says so with its own exit code; it
+ checks, it does not assume. It never installs, upgrades or removes a
+ package: it changes apt sources, one preferences file and the spec.

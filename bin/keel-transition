@@ -1,0 +1,12 @@
+#!/bin/bash
+# keel-transition(8): move a TurnKey Linux 19.0 appliance onto the Keel
+# Linux archive. Installed as /usr/sbin/keel-transition.
+#
+# Everything this program decides or writes is a function of
+# /usr/lib/keel-transition/transition.sh (decision 0004: the executable is
+# a thin main). Set KEEL_TRANSITION_LIB to run it from a git checkout:
+#
+#   KEEL_TRANSITION_LIB=$PWD/lib bin/keel-transition --help
+set -uo pipefail
+. "${KEEL_TRANSITION_LIB:-/usr/lib/keel-transition}/transition.sh"
+transition_main "$@"

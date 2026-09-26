@@ -1,0 +1,245 @@
+.TH KEEL\-TRANSITION 8 "2026-09-26" "keel-transition 0.1.0" "System Administration"
+.SH NAME
+keel\-transition \- move a TurnKey Linux 19.0 appliance onto the Keel Linux archive
+.SH SYNOPSIS
+.B keel\-transition
+.RI [ options ]
+.br
+.B keel\-transition \-\-apply
+.RI [ \-\-force\-unsigned ]
+.RI [ options ]
+.br
+.B keel\-transition \-\-rollback
+.RI [ options ]
+.SH DESCRIPTION
+.B keel\-transition
+surveys a running TurnKey Linux 19.0 appliance, writes the Keel instance
+spec that describes it, and switches its apt configuration over to the
+Keel Linux archive. It works in three phases. Each one is reversible and
+each one reports every file it touches, by name, before or after it
+touches it.
+.SS Phase 1: survey (the default)
+Runs
+.BR keel (8)
+.BR inspect ,
+writes
+.I /etc/keel/instance.yaml
+when that file is absent (an existing spec is never rewritten), writes the
+field by field report to
+.IR /var/lib/keel/transition/survey\-report.txt ,
+prints every field inspect could not infer, and prints the three changes
+.B \-\-apply
+would make. Nothing under
+.I /etc/apt
+is changed and no root privilege is needed.
+.SS Phase 2: \-\-apply
+Writes
+.I /etc/apt/sources.list.d/keel.sources
+(deb822,
+.B Signed\-By
+.IR /usr/share/keyrings/keel\-archive\-keyring.gpg ,
+suite
+.BR trixie ,
+component
+.BR main ),
+writes
+.I /etc/apt/preferences.d/keel
+with
+.B Pin: release o=Keel Linux
+at priority
+.BR 1001 ,
+and disables the upstream
+.I /etc/apt/sources.list.d/turnkey.list
+by renaming it to
+.IR turnkey.list.disabled\-by\-keel .
+The list is renamed, never deleted, so phase 3 can put the original bytes
+back. Running
+.B \-\-apply
+twice leaves byte identical files.
+.SS Phase 3: \-\-rollback
+Undoes exactly those three changes and nothing else: the upstream list is
+renamed back, byte for byte, and the source and the pin are removed. A
+file at either of those two paths that
+.B keel\-transition
+did not write is left alone and reported, and the run exits 7. The
+instance spec is left in place: it is the operator's, and removing it is
+the operator's decision.
+.SH IT NEVER TOUCHES A PACKAGE
+.B keel\-transition
+does not run
+.BR apt\-get ,
+and it installs, upgrades and removes nothing. It changes apt sources,
+one preferences file and the instance spec. After
+.B \-\-apply
+the operator runs
+.B apt\-get update
+and decides what to install. That separation is deliberate: a transition
+that also upgraded would be two failures in one command, and only one of
+them would be reversible by
+.BR \-\-rollback .
+.SH THE UNSIGNED ARCHIVE
+Before it changes anything,
+.B \-\-apply
+fetches
+.I dists/<suite>/InRelease
+from the archive over IPv6, or
+.I Release
+and
+.IR Release.gpg ,
+and verifies the signature with
+.BR gpgv (1)
+against
+.IR /usr/share/keyrings/keel\-archive\-keyring.gpg .
+When no signature verifies, it refuses, changes nothing and exits 4. It
+checks; it does not assume.
+.PP
+.B \-\-force\-unsigned
+overrides the refusal. It prints a warning naming the risk and writes the
+source with
+.BR "Trusted: yes" ,
+which turns apt's signature checking off for that archive: anything that
+can answer for that name, and any proxy on the way, can then install code
+that runs as root on the appliance. Use it on a test bench, never on a
+live one.
+.SH OPTIONS
+.TP
+.B \-\-apply
+Phase 2.
+.TP
+.B \-\-rollback
+Phase 3.
+.TP
+.B \-\-force\-unsigned
+Enable an archive whose Release does not verify. Test benches only.
+.TP
+.BI \-\-root " DIR"
+Work on this filesystem tree instead of
+.IR / .
+Every path above is read and written under
+.IR DIR .
+.TP
+.BI \-\-archive\-uri " URL"
+Default
+.IR https://archive.keellinux.org .
+.TP
+.BI \-\-suite " NAME"
+Default
+.IR trixie .
+.TP
+.BI \-\-components " LIST"
+Default
+.IR main .
+.TP
+.BI \-\-spec " FILE"
+Default
+.IR /etc/keel/instance.yaml .
+.TP
+.BI \-\-report " FILE"
+Default
+.IR /var/lib/keel/transition/survey\-report.txt .
+.TP
+.B \-\-no\-inspect
+Do not run
+.BR keel ;
+survey the apt state only.
+.TP
+.BR \-h ", " \-\-help
+Print the help and exit.
+.TP
+.B \-\-version
+Print the version and exit.
+.SH EXIT STATUS
+.TP
+.B 0
+Success, including every no-op case.
+.TP
+.B 1
+Usage error.
+.TP
+.B 2
+.B \-\-apply
+or
+.B \-\-rollback
+on the live system by a user other than root. Nothing was changed.
+.TP
+.B 3
+.B keel inspect
+could not infer a field the first boot would have asked for. The spec was
+written with what was found.
+.TP
+.B 4
+The archive has no Release that the keyring verifies. Nothing was changed.
+.TP
+.B 5
+A file could not be written, or
+.B \-\-apply
+found a file it did not write at one of its two paths.
+.TP
+.B 6
+.B keel\-archive\-keyring
+is not installed, so nothing could be verified. Nothing was changed.
+.TP
+.B 7
+.B \-\-rollback
+left something behind, and said what.
+.TP
+.B 8
+The
+.B keel
+command is not installed, so no spec was written.
+.SH FILES
+.TP
+.I /etc/apt/sources.list.d/keel.sources
+The deb822 source, written by phase 2.
+.TP
+.I /etc/apt/preferences.d/keel
+The origin pin, written by phase 2.
+.TP
+.I /etc/apt/sources.list.d/turnkey.list
+The upstream list, renamed by phase 2 and restored by phase 3.
+.TP
+.I /etc/keel/instance.yaml
+The instance spec, written by phase 1 when it is absent.
+.TP
+.I /var/lib/keel/transition/survey\-report.txt
+The field by field report of the last survey.
+.TP
+.I /usr/share/keyrings/keel\-archive\-keyring.gpg
+The archive key, from
+.BR keel\-archive\-keyring .
+.SH EXAMPLES
+Survey a Core 19.0 appliance, changing nothing:
+.PP
+.EX
+keel\-transition
+.EE
+.PP
+Apply against the project archive:
+.PP
+.EX
+keel\-transition \-\-apply
+apt\-get update
+.EE
+.PP
+Apply against an unsigned staging archive on a test bench, over IPv6:
+.PP
+.EX
+keel\-transition \-\-apply \-\-force\-unsigned \e
+    \-\-archive\-uri 'http://[2804:710:d0:5:bb3f:380a:f07b:7951]:8081' \e
+    \-\-suite trixie\-staging
+.EE
+.PP
+Undo it:
+.PP
+.EX
+keel\-transition \-\-rollback
+.EE
+.SH SEE ALSO
+.BR keel (8),
+.BR apt_preferences (5),
+.BR sources.list (5),
+.BR gpgv (1).
+.PP
+https://github.com/keel\-linux/keel\-transition
+.SH AUTHOR
+The KeelLinux maintainers.

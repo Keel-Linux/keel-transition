@@ -6,5 +6,10 @@ keel-transition (0.1.0) unstable; urgency=medium
     build time from keys/keel-archive-keyring.asc and checked against
     fingerprint AD0964BE3F09DED469A3B6B2148E951314703180, with the armored
     copy beside it. No maintainer script and no apt source.
+  * keel-transition: /usr/sbin/keel-transition and its library, in three
+    phases (survey, --apply, --rollback), each reversible and each
+    reported. --apply refuses, with exit 4, an archive whose Release the
+    keyring does not verify, unless --force-unsigned is given.
+  * No package is ever installed, upgraded or removed by this tool.
 
  -- KeelLinux maintainers <admin@keellinux.org>  Sat, 26 Sep 2026 00:00:00 +0000
