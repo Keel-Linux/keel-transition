@@ -1,0 +1,18 @@
+# Coverage gate for keel-transition: 95 percent, the bar for code the
+# project writes (decision 0003), measured by tests/coverage.sh (bats under
+# kcov, decision 0004). The check is "tests / coverage". Raise only.
+#
+# The suite generates throwaway OpenPGP keys and verifies real signatures,
+# so the runner needs gnupg and gpgv; everything else is stubbed and no
+# test touches the live system or the network.
+name: tests
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  tests:
+    uses: keel-linux/.github/.github/workflows/test-shell.yml@main
+    with:
+      threshold: 95
+      apt-packages: gnupg gpgv
