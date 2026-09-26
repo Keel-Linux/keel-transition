@@ -1,0 +1,29 @@
+#! /usr/bin/make -f
+
+export GNUPGHOME = $(CURDIR)/debian/gnupg
+KEYRING_FINGERPRINT = AD0964BE3F09DED469A3B6B2148E951314703180
+GEN = debian/gen
+
+%:
+	dh $@
+
+# The keyring package ships the key that exists today (decision 0005): the
+# armored file in keys/, dearmored here so apt can read it, plus the
+# fingerprint. The build fails if the two ever disagree, so the package can
+# never ship a key nobody checked.
+override_dh_auto_build:
+	rm -rf $(GEN) $(GNUPGHOME)
+	mkdir -p $(GEN)/usr/share/keyrings $(GEN)/usr/share/keel-archive-keyring
+	mkdir -m 700 -p $(GNUPGHOME)
+	gpg --batch --with-colons --show-keys keys/keel-archive-keyring.asc \
+	  | awk -F: '$$1 == "fpr" { print $$10; exit }' > $(GEN)/fingerprint.seen
+	echo $(KEYRING_FINGERPRINT) > $(GEN)/usr/share/keel-archive-keyring/fingerprint
+	cmp $(GEN)/fingerprint.seen $(GEN)/usr/share/keel-archive-keyring/fingerprint
+	cmp $(GEN)/fingerprint.seen keys/FINGERPRINT
+	gpg --batch --yes --dearmor \
+	  --output $(GEN)/usr/share/keyrings/keel-archive-keyring.gpg \
+	  keys/keel-archive-keyring.asc
+	rm -rf $(GNUPGHOME)
+
+override_dh_auto_clean:
+	rm -rf $(GEN) $(GNUPGHOME)

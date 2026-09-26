@@ -1,0 +1,27 @@
+Source: keel-transition
+Section: admin
+Priority: optional
+Maintainer: KeelLinux maintainers <admin@keellinux.org>
+Build-Depends:
+ debhelper-compat (= 13),
+ gnupg,
+Standards-Version: 4.7.2
+Vcs-Git: https://github.com/keel-linux/keel-transition.git
+Vcs-Browser: https://github.com/keel-linux/keel-transition
+Rules-Requires-Root: no
+
+Package: keel-archive-keyring
+Architecture: all
+Multi-Arch: foreign
+Depends:
+ ${misc:Depends},
+Description: GnuPG archive key of the Keel Linux package repository
+ The OpenPGP public key that signs the Release files of the Keel Linux
+ archive, installed as /usr/share/keyrings/keel-archive-keyring.gpg for
+ the Signed-By field of an apt source, with the armored copy and the
+ fingerprint of the primary key beside it.
+ .
+ The package installs the key and nothing else. It does not add an apt
+ source, does not change apt's configuration and has no maintainer
+ script: enabling the archive is keel-transition's job, and it is a
+ separate decision.

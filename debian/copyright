@@ -1,0 +1,29 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: keel-transition
+Source: https://github.com/keel-linux/keel-transition
+
+Files: *
+Copyright: 2026 KeelLinux maintainers
+License: GPL-3.0-or-later
+
+Files: keys/keel-archive-keyring.asc keys/FINGERPRINT
+Copyright: 2026 KeelLinux maintainers
+License: GPL-3.0-or-later
+Comment: The OpenPGP public key of the Keel Linux archive, primary key
+ fingerprint AD0964BE3F09DED469A3B6B2148E951314703180. A public key is not
+ a creative work; it is distributed under the same terms as the package
+ for simplicity.
+
+License: GPL-3.0-or-later
+ This program is free software: you can redistribute it and/or modify it
+ under the terms of the GNU General Public License as published by the
+ Free Software Foundation, either version 3 of the License, or (at your
+ option) any later version.
+ .
+ This program is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+ Public License for more details.
+ .
+ On Debian systems, the complete text of the GNU General Public License
+ version 3 can be found in /usr/share/common-licenses/GPL-3.

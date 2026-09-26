@@ -1,0 +1,13 @@
+coverage/
+debian/gen/
+debian/gnupg/
+debian/files
+debian/.debhelper/
+debian/keel-transition/
+debian/keel-archive-keyring/
+debian/debhelper-build-stamp
+debian/*.substvars
+debian/*.debhelper.log
+*.deb
+*.buildinfo
+*.changes

@@ -1,0 +1,3 @@
+debian/gen/usr/share/keyrings/keel-archive-keyring.gpg   usr/share/keyrings
+debian/gen/usr/share/keel-archive-keyring/fingerprint    usr/share/keel-archive-keyring
+keys/keel-archive-keyring.asc                            usr/share/keyrings
