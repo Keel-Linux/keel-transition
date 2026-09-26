@@ -93,6 +93,22 @@ archive_state() {
     return "$rc"
 }
 
+# report_turnkey_sources: name the deb822 files this tool will not rename,
+# and say why, so nobody reads "no upstream list on this machine" as "this
+# appliance has no upstream archive configured".
+report_turnkey_sources() {
+    local file found=no
+    while read -r file; do
+        [ -n "$file" ] || continue
+        found=yes
+        render_line observe "$file" "TurnKey stanza in a deb822 file shared with Debian: left enabled"
+    done <<< "$(turnkey_sources)"
+    if [ "$found" = yes ]; then
+        printf '  those files hold Debian stanzas too, so renaming one would disable Debian:\n'
+        printf '  the pin at %s is what makes the Keel archive win over them.\n' "$KEEL_PIN_PRIORITY"
+    fi
+}
+
 # phase_survey INSPECT: phase 1, the default. Changes nothing under /etc/apt.
 phase_survey() {
     local rc=0 av=0 plan
@@ -114,6 +130,7 @@ phase_survey() {
     printf '\nWhat --apply would change\n'
     plan="$(plan_apply no)"
     printf '%s\n' "$plan" | plan_render would
+    report_turnkey_sources
     printf '\n'
     if [ "$av" -ne 0 ]; then
         printf '%s: --apply would refuse today, exit %s: %s\n' \
@@ -160,6 +177,7 @@ phase_apply() {
     plan="$(plan_apply "$trusted")"
     printf '%s\n' "$plan" | plan_execute "$trusted" "$EXIT_WRITE_FAILED" || rc=$?
     printf '%s\n' "$plan" | plan_render "done"
+    report_turnkey_sources
     printf '\n'
     printf '%s: no package was installed, upgraded or removed. Run apt-get update yourself.\n' "$PROG"
     printf '%s: undo all of it with: keel-transition --rollback\n' "$PROG"

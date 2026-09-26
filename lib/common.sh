@@ -128,6 +128,21 @@ state_turnkey() {
     fi
 }
 
+# turnkey_sources: the deb822 files that carry a TurnKey archive stanza.
+# A 19.0 appliance installed from the 19.0 media has no turnkey.list at
+# all: its upstream archive lives in /etc/apt/sources.list.d/*.sources,
+# in the same file as the Debian stanzas (sources.sources and
+# security.sources.sources both hold one of each). Such a file cannot be
+# renamed the way turnkey.list can, because renaming it would disable
+# Debian with it, so this tool reports them and leaves them alone. They
+# do no harm: the origin pin makes the Keel archive win over them.
+turnkey_sources() {
+    local dir
+    dir="$(rooted "$(dirname "$KEEL_TURNKEY_LIST")")"
+    [ -d "$dir" ] || return 0
+    grep -lE '^URIs:.*turnkeylinux\.org' "$dir"/*.sources 2> /dev/null || true
+}
+
 # keyring_fingerprint: the fingerprint the keyring package recorded, or the
 # empty string when the package is not installed.
 keyring_fingerprint() {
