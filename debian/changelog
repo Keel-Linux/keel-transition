@@ -1,3 +1,16 @@
+keel-transition (0.1.1) trixie; urgency=medium
+
+  * keel-archive-keyring: ship the rotated public key. Signing subkey
+    694DE5E8 was revoked on 2026-09-27 with the offline primary, reason
+    compromised, because its secret went through a chat channel on
+    2026-09-24; it never signed anything. The new signing subkey is
+    03041024F4B2C0C2F42DDDEA04906EAB77513310, Ed25519, expiring 2028-09-26.
+    The primary AD0964BE3F09DED469A3B6B2148E951314703180 never left offline
+    custody, so the fingerprint this package asserts does not change and a
+    machine that already trusts the key keeps trusting it.
+
+ -- Marcos Mendez <mendez.foto@gmail.com>  Sun, 27 Sep 2026 01:39:02 +0000
+
 keel-transition (0.1.0) unstable; urgency=medium
 
   * Initial release, the migration path of BRIEF section 7, as two binary
