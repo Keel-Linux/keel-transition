@@ -26,18 +26,18 @@ teardown() { scratch_teardown; }
     [ "$stderr" = "keel-transition: a message" ]
 }
 
-@test "pin_render is the release pin at 1001, the same file the apt tooling renders" {
-    run pin_render "Keel Linux" 1001
+@test "pin_render is the release pin at 990 by default, never above 1000 (tracker#23)" {
+    run pin_render "$KEEL_PIN_ORIGIN" "$KEEL_PIN_PRIORITY"
     [ "$status" -eq 0 ]
     [ "${lines[2]}" = "Package: *" ]
     [ "${lines[3]}" = "Pin: release o=Keel Linux" ]
-    [ "${lines[4]}" = "Pin-Priority: 1001" ]
+    [ "${lines[4]}" = "Pin-Priority: 990" ]
 }
 
 @test "pin_render takes another origin and priority" {
-    run pin_render "Other" 990
+    run pin_render "Other" 500
     [ "${lines[3]}" = "Pin: release o=Other" ]
-    [ "${lines[4]}" = "Pin-Priority: 990" ]
+    [ "${lines[4]}" = "Pin-Priority: 500" ]
 }
 
 @test "sources_render writes a deb822 stanza signed by the keyring" {

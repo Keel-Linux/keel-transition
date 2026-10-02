@@ -10,17 +10,18 @@ teardown() { scratch_teardown; }
 @test "the executable prints its version" {
     run "$REPO/bin/keel-transition" --version
     [ "$status" -eq 0 ]
-    [ "$output" = "keel-transition 0.1.0" ]
+    [ "$output" = "keel-transition 0.2.0" ]
 }
 
-@test "the help says the three phases, the refusal and that no package is touched" {
+@test "the help says the three phases, the refusal, the pin and the one package removed" {
     run "$REPO/bin/keel-transition" --help
     [ "$status" -eq 0 ]
     [[ "$output" == *"survey"* ]]
     [[ "$output" == *"--apply"* ]]
     [[ "$output" == *"--rollback"* ]]
-    [[ "$output" == *"never touches a package"* ]]
-    [[ "$output" == *"installs, upgrades and removes nothing"* ]]
+    [[ "$output" == *"installs and upgrades nothing"* ]]
+    [[ "$output" == *"The one"*"package it removes is turnkey-keys"* ]]
+    [[ "$output" == *"The pin is 990, below 1000"* ]]
     [[ "$output" == *"refuses, with exit 4"* ]]
 }
 

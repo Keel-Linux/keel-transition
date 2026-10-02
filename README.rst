@@ -18,12 +18,14 @@ The migration path for a machine already running TurnKey Linux 19.0
 Compatible with TurnKey Linux appliances: the tool reads what a 19.0
 machine already has and leaves it recoverable.
 
-It never touches a package
-==========================
+It installs and upgrades nothing
+================================
 
-``keel-transition`` does not run ``apt-get``. It installs nothing,
-upgrades nothing and removes nothing. It changes apt sources, one
-preferences file and the instance spec. Running ``apt-get update``, and
+``keel-transition`` does not run ``apt-get``. It installs nothing and
+upgrades nothing. The one package it removes is ``turnkey-keys``, purged
+with ``dpkg -P`` after the files it owns are kept for ``--rollback``, so
+no key of the TurnKey archive stays trusted. It changes apt sources, two
+preferences files and the instance spec. Running ``apt-get update``, and
 deciding what to install afterwards, stays with the operator.
 
 That separation is the point. A transition that also upgraded would be
@@ -88,7 +90,7 @@ writes ``/etc/apt/preferences.d/keel``, the same file the apt tooling's
 
    Package: *
    Pin: release o=Keel Linux
-   Pin-Priority: 1001
+   Pin-Priority: 990
 
 and disables the upstream list by renaming
 ``/etc/apt/sources.list.d/turnkey.list`` to
@@ -97,8 +99,13 @@ phase 3 can put the original bytes back. Running ``--apply`` twice leaves
 byte identical files.
 
 The pin is on the ``Origin`` of the signed ``Release``, not on the host
-name, so it follows the packages to any mirror; 1001 is above 1000 so a
-``+keel1`` rebuild is kept even when upstream publishes a higher version.
+name, so it follows the packages to any mirror. 990 is above the 500 of
+every other archive, so the Keel build of a package is the candidate
+whatever version another archive has, and a ``+keel1`` rebuild is kept
+when upstream publishes a higher version. It is below 1000, so apt never
+installs a Keel version over a newer installed one: the 1001 this tool
+used to write downgraded every package newer on the machine than in the
+archive (tracker#23).
 
 What a 19.0 appliance really looks like
 ```````````````````````````````````````
@@ -107,31 +114,41 @@ What a 19.0 appliance really looks like
 appliance installed from the 19.0 media has none: its upstream archive
 lives in ``/etc/apt/sources.list.d/*.sources``, deb822, in the *same
 file* as the Debian stanzas (``sources.sources`` and
-``security.sources.sources`` each hold one of each). Renaming one of
-those would disable Debian along with TurnKey, so ``keel-transition``
-does not touch them. It names them instead, in every phase:
+``security.sources.sources`` each hold one of each), with
+``turnkey-testing.sources`` beside them, an ``/etc/apt/preferences`` that
+pins ``o=turnkeylinux`` at 999, and ``turnkey-keys``. Left in place, the
+999 pin would beat the Keel pin at 990, so ``--apply`` replaces all of it
+(handbook decision 0039: an image takes packages from Debian and the Keel
+repository only):
 
 .. code-block:: console
 
-     observe  /etc/apt/sources.list.d/sources.sources
-              TurnKey stanza in a deb822 file shared with Debian: left enabled
-     those files hold Debian stanzas too, so renaming one would disable Debian:
-     the pin at 1001 is what makes the Keel archive win over them.
+     create   /etc/apt/sources.list.d/debian.sources     deb822, Debian
+     create   /etc/apt/sources.list.d/security.sources   deb822, Debian
+     rename   /etc/apt/sources.list.d/sources.sources    to sources.sources.disabled-by-keel
+     rename   /etc/apt/sources.list.d/security.sources.sources  to ...disabled-by-keel
+     rename   /etc/apt/sources.list.d/turnkey-testing.sources   to ...disabled-by-keel
+     rename   /etc/apt/preferences                       the o=turnkeylinux pin, to preferences.disabled-by-keel
+     purge    turnkey-keys                               dpkg -P, its files kept in /var/lib/keel/transition
 
-Leaving them enabled is not a correctness problem: the pin is on the
-origin, so any package the Keel archive carries wins at priority 1001
-whatever else is configured. Disabling a single stanza inside a shared
-deb822 file is a separate change, and it needs a decision note before it
-is made.
+Debian's files keep the suites and components the appliance's own Debian
+stanzas had. The TurnKey files are renamed only once Debian's are
+written, so Debian is never left without a source. Each of these is a
+refusal instead, and then nothing is purged: a ``debian.sources`` or
+``security.sources`` this tool did not write, an ``/etc/apt/preferences``
+with pins besides TurnKey's, or a TurnKey stanza in a file this tool does
+not know.
 
 Phase 3: ``--rollback``
 -----------------------
 
-Undoes exactly those three changes and nothing else. The upstream list is
-renamed back, byte for byte; the source and the pin are removed. A file at
-either of those two paths that ``keel-transition`` did not write is left
-alone, reported, and the run exits 7. The instance spec is left in place:
-it is yours.
+Undoes exactly what ``--apply`` did and nothing else. Every renamed file
+is renamed back, byte for byte; the files this tool wrote are removed; the
+files ``turnkey-keys`` owned are put back where they were, and the run
+says to reinstall the package (``apt-get update && apt-get install
+turnkey-keys``) so dpkg owns them again. A file at a path this tool writes
+that ``keel-transition`` did not write is left alone, reported, and the
+run exits 7. The instance spec is left in place: it is yours.
 
 .. code-block:: console
 
@@ -187,10 +204,11 @@ at all (BRIEF section 10). A staging archive on a build host, by address:
      Installed: (none)
      Candidate: 0.1.0
      Version table:
-        0.1.0 1001
-          1001 http://[2804:710:d0:5:bb3f:380a:f07b:7951]:8081 trixie-staging/main amd64 Packages
+        0.1.0 990
+          990 http://[2804:710:d0:5:bb3f:380a:f07b:7951]:8081 trixie-staging/main amd64 Packages
 
-Note the 1001: the pin is what makes the project's package win.
+Note the 990: the pin is what makes the project's package win, and it
+never wins over a newer version already installed.
 
 Exit codes
 ==========

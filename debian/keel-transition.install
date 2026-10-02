@@ -3,4 +3,5 @@ lib/transition.sh        usr/lib/keel-transition
 lib/common.sh            usr/lib/keel-transition
 lib/archive.sh           usr/lib/keel-transition
 lib/plan.sh              usr/lib/keel-transition
+lib/turnkey.sh           usr/lib/keel-transition
 lib/phases.sh            usr/lib/keel-transition

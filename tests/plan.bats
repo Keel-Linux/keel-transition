@@ -25,7 +25,7 @@ ours() { printf '# %s as x\n' "$KEEL_MARKER" > "$1"; }
     [[ "${lines[0]}" == create-sources* ]]
     [[ "${lines[0]}" == *"Signed-By"* ]]
     [[ "${lines[1]}" == create-pin* ]]
-    [[ "${lines[1]}" == *"release o=Keel Linux at 1001"* ]]
+    [[ "${lines[1]}" == *"release o=Keel Linux at 990"* ]]
     [[ "${lines[2]}" == disable-turnkey* ]]
     [[ "${lines[2]}" == *"turnkey.list.disabled-by-keel"* ]]
 }
@@ -122,7 +122,7 @@ ours() { printf '# %s as x\n' "$KEEL_MARKER" > "$1"; }
     cp "$LIST" "$TMP/original"
     plan_apply no | plan_execute no 5
     grep -q 'Types: deb' "$SOURCES"
-    grep -q 'Pin-Priority: 1001' "$PREFS"
+    grep -q 'Pin-Priority: 990' "$PREFS"
     [ ! -e "$LIST" ]
     cmp "$TMP/original" "$LIST.disabled-by-keel"
 }

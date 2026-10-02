@@ -9,6 +9,13 @@
 #   KEEL_SOURCES     /etc/apt/sources.list.d/keel.sources, the deb822 source
 #   KEEL_PREFS       /etc/apt/preferences.d/keel, the origin pin
 #   KEEL_TURNKEY_LIST  /etc/apt/sources.list.d/turnkey.list, renamed, never deleted
+#   KEEL_TURNKEY_DEB822  the deb822 files a 19.0 appliance shares with Debian
+#                    and its testing file, renamed, never deleted
+#   KEEL_TURNKEY_PREFS /etc/apt/preferences, TurnKey's o=turnkeylinux pin at 999
+#   KEEL_DEBIAN_SOURCES, KEEL_SECURITY_SOURCES  Debian's own sources, written
+#                    in place of the shared files
+#   KEEL_STATE_DIR   /var/lib/keel/transition, where the files turnkey-keys
+#                    owned are kept for --rollback
 #   KEEL_SPEC        /etc/keel/instance.yaml, what keel inspect writes
 #   KEEL_REPORT      the field by field report of that inspect
 #   KEEL_KEYRING_GPG the dearmored key keel-archive-keyring installs
@@ -20,13 +27,23 @@ KEEL_ARCHIVE_COMPONENTS="${KEEL_ARCHIVE_COMPONENTS:-main}"
 KEEL_KEYRING_GPG="${KEEL_KEYRING_GPG:-/usr/share/keyrings/keel-archive-keyring.gpg}"
 KEEL_FINGERPRINT_FILE="${KEEL_FINGERPRINT_FILE:-/usr/share/keel-archive-keyring/fingerprint}"
 KEEL_PIN_ORIGIN="${KEEL_PIN_ORIGIN:-Keel Linux}"
-KEEL_PIN_PRIORITY="${KEEL_PIN_PRIORITY:-1001}"
+# 990: above the 500 of every other archive, so the Keel build of a package
+# is the candidate whatever version another archive has; below 1000, so apt
+# never installs it over a newer installed version. 1001 downgraded every
+# package newer on the machine than in the archive (tracker#23).
+KEEL_PIN_PRIORITY="${KEEL_PIN_PRIORITY:-990}"
 KEEL_SPEC="${KEEL_SPEC:-/etc/keel/instance.yaml}"
 KEEL_REPORT="${KEEL_REPORT:-/var/lib/keel/transition/survey-report.txt}"
 KEEL_SOURCES="${KEEL_SOURCES:-/etc/apt/sources.list.d/keel.sources}"
 KEEL_PREFS="${KEEL_PREFS:-/etc/apt/preferences.d/keel}"
 KEEL_TURNKEY_LIST="${KEEL_TURNKEY_LIST:-/etc/apt/sources.list.d/turnkey.list}"
 KEEL_DISABLED_SUFFIX="${KEEL_DISABLED_SUFFIX:-.disabled-by-keel}"
+KEEL_TURNKEY_DEB822="${KEEL_TURNKEY_DEB822:-sources.sources security.sources.sources turnkey-testing.sources}"
+KEEL_TURNKEY_PREFS="${KEEL_TURNKEY_PREFS:-/etc/apt/preferences}"
+KEEL_DEBIAN_SOURCES="${KEEL_DEBIAN_SOURCES:-/etc/apt/sources.list.d/debian.sources}"
+KEEL_SECURITY_SOURCES="${KEEL_SECURITY_SOURCES:-/etc/apt/sources.list.d/security.sources}"
+KEEL_DEBIAN_KEYRING="${KEEL_DEBIAN_KEYRING:-/usr/share/keyrings/debian-archive-keyring.gpg}"
+KEEL_STATE_DIR="${KEEL_STATE_DIR:-/var/lib/keel/transition}"
 
 # The line every file this tool writes carries, and the only licence it has
 # to remove one again: a file without it was written by somebody else.
@@ -56,11 +73,12 @@ rooted() {
     printf '%s%s\n' "$KEEL_ROOT" "$1"
 }
 
-# pin_render ORIGIN PRIORITY: the apt preferences file, byte for byte what
-# the apt tooling's bin/pin-file renders (repos/apt lib/pin.sh). The pin is
-# on the Origin of the signed Release, not on the host name, so it follows
-# the packages to any mirror; 1001 is above 1000 so a +keel1 rebuild is kept
-# even when upstream publishes a higher version (BRIEF section 7).
+# pin_render ORIGIN PRIORITY: the apt preferences file. The pin is on the
+# Origin of the signed Release, not on the host name, so it follows the
+# packages to any mirror. At KEEL_PIN_PRIORITY, 990, a +keel1 rebuild is
+# kept when upstream publishes a higher version, and nothing newer that is
+# installed is ever replaced (tracker#23). The apt tooling's bin/pin-file
+# (Keel-Linux/apt lib/pin.sh) still defaults to 1001 and must follow.
 pin_render() {
     local origin="$1" priority="$2"
     cat << PIN
@@ -132,10 +150,9 @@ state_turnkey() {
 # A 19.0 appliance installed from the 19.0 media has no turnkey.list at
 # all: its upstream archive lives in /etc/apt/sources.list.d/*.sources,
 # in the same file as the Debian stanzas (sources.sources and
-# security.sources.sources both hold one of each). Such a file cannot be
-# renamed the way turnkey.list can, because renaming it would disable
-# Debian with it, so this tool reports them and leaves them alone. They
-# do no harm: the origin pin makes the Keel archive win over them.
+# security.sources.sources both hold one of each). Renaming one alone would
+# disable Debian with it, so --apply writes Debian's own sources first
+# (lib/turnkey.sh) and only then sets the TurnKey files aside.
 turnkey_sources() {
     local dir
     dir="$(rooted "$(dirname "$KEEL_TURNKEY_LIST")")"
@@ -152,5 +169,5 @@ keyring_fingerprint() {
     tr -d '[:space:]' < "$file"
 }
 
-KEEL_TRANSITION_VERSION="0.1.0"
+KEEL_TRANSITION_VERSION="0.2.0"
 KEEL_CURL_TIMEOUT="${KEEL_CURL_TIMEOUT:-30}"

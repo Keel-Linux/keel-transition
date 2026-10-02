@@ -93,22 +93,6 @@ archive_state() {
     return "$rc"
 }
 
-# report_turnkey_sources: name the deb822 files this tool will not rename,
-# and say why, so nobody reads "no upstream list on this machine" as "this
-# appliance has no upstream archive configured".
-report_turnkey_sources() {
-    local file found=no
-    while read -r file; do
-        [ -n "$file" ] || continue
-        found=yes
-        render_line observe "$file" "TurnKey stanza in a deb822 file shared with Debian: left enabled"
-    done <<< "$(turnkey_sources)"
-    if [ "$found" = yes ]; then
-        printf '  those files hold Debian stanzas too, so renaming one would disable Debian:\n'
-        printf '  the pin at %s is what makes the Keel archive win over them.\n' "$KEEL_PIN_PRIORITY"
-    fi
-}
-
 # phase_survey INSPECT: phase 1, the default. Changes nothing under /etc/apt.
 phase_survey() {
     local rc=0 av=0 plan
@@ -130,7 +114,6 @@ phase_survey() {
     printf '\nWhat --apply would change\n'
     plan="$(plan_apply no)"
     printf '%s\n' "$plan" | plan_render would
-    report_turnkey_sources
     printf '\n'
     if [ "$av" -ne 0 ]; then
         printf '%s: --apply would refuse today, exit %s: %s\n' \
@@ -177,9 +160,12 @@ phase_apply() {
     plan="$(plan_apply "$trusted")"
     printf '%s\n' "$plan" | plan_execute "$trusted" "$EXIT_WRITE_FAILED" || rc=$?
     printf '%s\n' "$plan" | plan_render "done"
-    report_turnkey_sources
     printf '\n'
-    printf '%s: no package was installed, upgraded or removed. Run apt-get update yourself.\n' "$PROG"
+    if grep -q '^purge-turnkeykeys' <<< "$plan" && [ -z "$(turnkey_keys_state)" ]; then
+        printf '%s: turnkey-keys was purged, its files kept for --rollback; no package was installed or upgraded. Run apt-get update yourself.\n' "$PROG"
+    else
+        printf '%s: no package was installed, upgraded or removed. Run apt-get update yourself.\n' "$PROG"
+    fi
     printf '%s: undo all of it with: keel-transition --rollback\n' "$PROG"
     return "$rc"
 }
@@ -213,14 +199,23 @@ phases. Each one is reversible and each one reports every file it touches.
                $KEEL_KEYRING_GPG), write $KEEL_PREFS
                (Pin: release o=$KEEL_PIN_ORIGIN, Pin-Priority $KEEL_PIN_PRIORITY),
                and disable $KEEL_TURNKEY_LIST by renaming it
-               to <name>$KEEL_DISABLED_SUFFIX.
-  --rollback   undo exactly that: the upstream list is renamed back, byte
-               for byte, and the sources and the pin are removed.
+               to <name>$KEEL_DISABLED_SUFFIX. On a 19.0 appliance, also
+               write Debian's own $KEEL_DEBIAN_SOURCES and
+               $KEEL_SECURITY_SOURCES, then rename TurnKey's
+               $KEEL_TURNKEY_DEB822
+               and its o=turnkeylinux pin in $KEEL_TURNKEY_PREFS the same
+               way, and purge turnkey-keys with dpkg after keeping its files
+               in $KEEL_STATE_DIR. Nothing is purged when anything was refused.
+  --rollback   undo exactly that: every renamed file is renamed back, byte
+               for byte, the files turnkey-keys owned are put back, and the
+               files this tool wrote are removed.
 
-This tool never touches a package. It does not run apt-get, and it
-installs, upgrades and removes nothing. It changes apt sources, one
-preferences file and the instance spec. Running apt-get update, and
-deciding what to install afterwards, stays with the operator.
+The pin is $KEEL_PIN_PRIORITY, below 1000: apt prefers the Keel build of a
+package and never installs it over a newer installed version.
+
+This tool does not run apt-get, and installs and upgrades nothing. The one
+package it removes is turnkey-keys. Running apt-get update, and deciding
+what to install afterwards, stays with the operator.
 
 --apply refuses, with exit $EXIT_ARCHIVE_UNSIGNED, when the archive has no
 Release that $KEEL_KEYRING_GPG verifies. It checks; it never assumes.
