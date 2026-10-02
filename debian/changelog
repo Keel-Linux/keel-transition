@@ -1,3 +1,29 @@
+keel-transition (0.2.0) trixie; urgency=medium
+
+  * The pin is 990, not 1001 (tracker#23). Above 1000 apt installed the
+    Keel version even when it was older, so every package newer on the
+    machine than in the archive was downgraded on the next upgrade. At 990
+    the Keel build is still the candidate over any other archive's
+    version, and a newer installed version is never replaced.
+    tests/turnkey19.bats asks apt itself, from local archives.
+  * On a 19.0 appliance --apply replaces what TurnKey's bootstrap left,
+    since TurnKey's o=turnkeylinux pin at 999 would beat the Keel pin at
+    990: it writes Debian's own debian.sources and security.sources, with
+    the suites and components the appliance's Debian stanzas had, then
+    renames sources.sources, security.sources.sources,
+    turnkey-testing.sources and an /etc/apt/preferences holding only the
+    TurnKey pin to <name>.disabled-by-keel, and purges turnkey-keys with
+    dpkg -P after keeping the files it owns in /var/lib/keel/transition.
+    A debian.sources or security.sources it did not write, other pins in
+    /etc/apt/preferences, or a TurnKey stanza in a file it does not know
+    is a refusal, exit 5, and then nothing is purged. --rollback renames
+    every file back byte for byte, puts the key files back and says to
+    reinstall turnkey-keys.
+  * keel-transition --version says 0.2.0; it said 0.1.0 since the first
+    release.
+
+ -- Marcos Mendez <mendez.foto@gmail.com>  Fri, 02 Oct 2026 16:00:00 +0000
+
 keel-transition (0.1.1) trixie; urgency=medium
 
   * keel-archive-keyring: ship the rotated public key. Signing subkey

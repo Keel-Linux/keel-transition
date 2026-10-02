@@ -3,8 +3,10 @@
 # kcov, decision 0004). The check is "tests / coverage". Raise only.
 #
 # The suite generates throwaway OpenPGP keys and verifies real signatures,
-# so the runner needs gnupg and gpgv; everything else is stubbed and no
-# test touches the live system or the network.
+# so the runner needs gnupg and gpgv; tests/turnkey19.bats asks apt itself
+# what the pin would install, from local archives apt-ftparchive (apt-utils)
+# indexes. Everything else is stubbed and no test touches the live system
+# or the network.
 name: tests
 on:
   pull_request:
@@ -15,7 +17,7 @@ jobs:
     uses: keel-linux/.github/.github/workflows/test-shell.yml@main
     with:
       threshold: 95
-      apt-packages: gnupg gpgv
+      apt-packages: gnupg gpgv apt-utils
   # A change that ships must come with a changelog entry, or it cannot be
   # installed and never reaches an appliance. The rule and its tests are
   # bin/require-changelog of the .github repository. The check is

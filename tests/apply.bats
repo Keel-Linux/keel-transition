@@ -88,7 +88,7 @@ apply() { run "$REPO/bin/keel-transition" --apply --root "$ROOT" "$@"; }
     grep -q 'Components: main' "$SOURCES"
     grep -q 'Trusted: yes' "$SOURCES"
     grep -q 'Pin: release o=Keel Linux' "$PREFS"
-    grep -q 'Pin-Priority: 1001' "$PREFS"
+    grep -q 'Pin-Priority: 990' "$PREFS"
     [ ! -e "$LIST" ]
     cmp "$TMP/turnkey.original" "$LIST.disabled-by-keel"
 }

@@ -47,8 +47,9 @@ writes
 with
 .B Pin: release o=Keel Linux
 at priority
-.BR 1001 ,
-and disables the upstream
+.BR 990 ,
+below 1000 so apt never installs a Keel version over a newer installed
+one, and disables the upstream
 .I /etc/apt/sources.list.d/turnkey.list
 by renaming it to
 .IR turnkey.list.disabled\-by\-keel .
@@ -61,26 +62,47 @@ twice leaves byte identical files.
 is the name an appliance of the 18.x lineage carries. An appliance
 installed from the 19.0 media has none: its upstream archive lives in
 .IR /etc/apt/sources.list.d/*.sources ,
-deb822, in the same file as the Debian stanzas. Renaming one of those
-would disable Debian with it, so
-.B keel\-transition
-leaves them alone and names them in its report instead. They do no harm:
-the origin pin at 1001 makes the Keel archive win over them whatever
-else is configured.
+deb822, in the same file as the Debian stanzas
+.RI ( sources.sources ,
+.IR security.sources.sources ),
+beside
+.I turnkey\-testing.sources
+and an
+.I /etc/apt/preferences
+pinning o=turnkeylinux at 999. On such an appliance
+.B \-\-apply
+writes Debian's own
+.I debian.sources
+and
+.I security.sources
+with the suites and components the Debian stanzas had, then renames the
+TurnKey files and the TurnKey pin to
+.IR <name>.disabled\-by\-keel ,
+and purges
+.B turnkey\-keys
+with
+.B dpkg \-P
+after keeping the files it owns in
+.IR /var/lib/keel/transition .
+A debian.sources or security.sources it did not write, a preferences file
+with other pins, or a TurnKey stanza in a file it does not know is a
+refusal, and then nothing is purged.
 .SS Phase 3: \-\-rollback
-Undoes exactly those three changes and nothing else: the upstream list is
-renamed back, byte for byte, and the source and the pin are removed. A
-file at either of those two paths that
+Undoes exactly what \-\-apply did and nothing else: every renamed file is
+renamed back, byte for byte, the files it wrote are removed, and the files
+turnkey\-keys owned are put back, with a note to reinstall that package. A
+file at a path it writes that
 .B keel\-transition
 did not write is left alone and reported, and the run exits 7. The
 instance spec is left in place: it is the operator's, and removing it is
 the operator's decision.
-.SH IT NEVER TOUCHES A PACKAGE
+.SH IT INSTALLS AND UPGRADES NOTHING
 .B keel\-transition
 does not run
 .BR apt\-get ,
-and it installs, upgrades and removes nothing. It changes apt sources,
-one preferences file and the instance spec. After
+and it installs and upgrades nothing. The one package it removes is
+turnkey\-keys. It changes apt sources, two preferences files and the
+instance spec. After
 .B \-\-apply
 the operator runs
 .B apt\-get update
