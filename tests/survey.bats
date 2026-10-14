@@ -133,7 +133,7 @@ survey() { run "$REPO/bin/keel-transition" --root "$ROOT" "$@"; }
 @test "the survey names the key the keyring package installed" {
     stub_keel
     survey
-    [[ "$output" == *"key AD0964BE3F09DED469A3B6B2148E951314703180"* ]]
+    [[ "$output" == *"key $KEYRING_FPR"* ]]
 }
 
 @test "the survey says it would replace the deb822 TurnKey sources with Debian's" {

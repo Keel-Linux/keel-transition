@@ -169,5 +169,5 @@ keyring_fingerprint() {
     tr -d '[:space:]' < "$file"
 }
 
-KEEL_TRANSITION_VERSION="0.2.0"
+KEEL_TRANSITION_VERSION="0.2.1"
 KEEL_CURL_TIMEOUT="${KEEL_CURL_TIMEOUT:-30}"

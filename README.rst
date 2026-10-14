@@ -3,17 +3,19 @@ keel-transition
 ================
 
 The migration path for a machine already running TurnKey Linux 19.0
-(BRIEF section 7). Two binary packages, built from this one source tree:
-
-``keel-archive-keyring``
-    The project's OpenPGP public key and nothing else. No maintainer
-    script, no apt source, no change to apt's configuration.
+(BRIEF section 7). This source tree builds 1 binary package:
 
 ``keel-transition``
     ``/usr/sbin/keel-transition`` and its library: survey the appliance,
     write its Keel instance spec, and switch its apt configuration over
     to the Keel Linux archive, in three phases that are each reversible
     and each reported.
+
+It depends on ``keel-archive-keyring``, the public keys of the project.
+That package is built from Keel-Linux/keel-keys (handbook decision 0055).
+keel-transition reads 2 of its files: the main keyring
+``/usr/share/keyrings/keel-archive-keyring.gpg`` and the main fingerprint
+``/usr/share/keel-archive-keyring/fingerprint``.
 
 Compatible with TurnKey Linux appliances: the tool reads what a 19.0
 machine already has and leaves it recoverable.
@@ -232,13 +234,13 @@ Installing
 
    # apt-get install keel-archive-keyring keel-transition
 
-Until the archive is signed and published, build the two packages from
-this tree:
+To build the package from this tree, install ``keel-archive-keyring``
+first, from the archive or from Keel-Linux/keel-keys:
 
 .. code-block:: console
 
    $ dpkg-buildpackage -us -uc -b
-   # dpkg -i ../keel-archive-keyring_0.1.0_all.deb ../keel-transition_0.1.0_all.deb
+   # dpkg -i ../keel-transition_0.2.1_all.deb
 
 or, on the build host, with the apt tooling, which detects this as a
 native package because its source name starts with ``keel`` and it

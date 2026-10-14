@@ -41,12 +41,20 @@ deb https://archive.turnkeylinux.org/debian trixie-security main
 LIST
 }
 
-# install_keyring: what the keel-archive-keyring package installs.
+# install_keyring: the 2 files of the keel-archive-keyring package that
+# keel-transition reads, the main keyring and the fingerprint of its
+# primary key. The package is built from Keel-Linux/keel-keys. Here the key
+# is a throwaway key, made once for each test, and KEYRING_FPR is its
+# fingerprint.
 install_keyring() {
     mkdir -p "$ROOT/usr/share/keyrings" "$ROOT/usr/share/keel-archive-keyring"
-    gpg --dearmor < "$REPO/keys/keel-archive-keyring.asc" \
+    if [ -z "${KEYRING_FPR:-}" ]; then
+        KEYRING_FPR="$(make_signing_key keyring)"
+        export KEYRING_FPR
+    fi
+    gpg --batch --quiet --yes --export "$KEYRING_FPR" \
         > "$ROOT/usr/share/keyrings/keel-archive-keyring.gpg" 2> /dev/null
-    cp "$REPO/keys/FINGERPRINT" "$ROOT/usr/share/keel-archive-keyring/fingerprint"
+    printf '%s\n' "$KEYRING_FPR" > "$ROOT/usr/share/keel-archive-keyring/fingerprint"
 }
 
 # stub_curl_absent: every fetch fails the way --fail does on a 404.
