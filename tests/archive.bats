@@ -120,7 +120,7 @@ teardown() { scratch_teardown; }
     run archive_state
     [ "$status" -eq 1 ]
     [[ "$output" == *"unverified"* ]]
-    [[ "$output" == *"AD0964BE3F09DED469A3B6B2148E951314703180"* ]]
+    [[ "$output" == *"$KEYRING_FPR"* ]]
 }
 
 @test "archive_state says the keyring package is missing when it is" {

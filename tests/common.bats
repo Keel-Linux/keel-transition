@@ -89,7 +89,7 @@ teardown() { scratch_teardown; }
 
 @test "keyring_fingerprint reads the file the keyring package installs" {
     install_keyring
-    [ "$(keyring_fingerprint)" = AD0964BE3F09DED469A3B6B2148E951314703180 ]
+    [ "$(keyring_fingerprint)" = "$KEYRING_FPR" ]
 }
 
 @test "keyring_fingerprint fails when the keyring package is not installed" {

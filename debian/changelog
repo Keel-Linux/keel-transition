@@ -1,3 +1,18 @@
+keel-transition (0.2.1) trixie; urgency=medium
+
+  * This source no longer builds keel-archive-keyring. The package is now
+    built from Keel-Linux/keel-keys (handbook decision 0055), which
+    installs 1 keyring file for each signing role. keel-transition still
+    reads the main keyring and /usr/share/keel-archive-keyring/fingerprint,
+    which keep their paths and their meaning.
+  * keel-transition depends on keel-archive-keyring (>= 0.2.0), the
+    version that is in the archive, and no longer on the version of this
+    source.
+  * The tests use a throwaway key for the keyring files, not the project
+    key in keys/, which is removed.
+
+ -- KeelLinux maintainers <admin@keellinux.org>  Wed, 14 Oct 2026 18:00:00 +0000
+
 keel-transition (0.2.0) trixie; urgency=medium
 
   * The pin is 990, not 1001 (tracker#23). Above 1000 apt installed the
