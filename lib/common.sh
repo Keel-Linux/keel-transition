@@ -19,12 +19,19 @@
 #   KEEL_SPEC        /etc/keel/instance.yaml, what keel inspect writes
 #   KEEL_REPORT      the field by field report of that inspect
 #   KEEL_KEYRING_GPG the dearmored key keel-archive-keyring installs
+#   KEEL_SECURITY_KEYRING_GPG  the keyring of the security role, which
+#                    keel-archive-keyring 0.3.0 and later installs
 
 KEEL_ROOT="${KEEL_ROOT:-}"
 KEEL_ARCHIVE_URI="${KEEL_ARCHIVE_URI:-https://archive.keellinux.org}"
 KEEL_ARCHIVE_SUITE="${KEEL_ARCHIVE_SUITE:-trixie}"
 KEEL_ARCHIVE_COMPONENTS="${KEEL_ARCHIVE_COMPONENTS:-main}"
 KEEL_KEYRING_GPG="${KEEL_KEYRING_GPG:-/usr/share/keyrings/keel-archive-keyring.gpg}"
+# The Keel security suite (handbook decision 0055), signed by the security
+# key alone. --apply writes it into security.sources after Debian's, so the
+# daily cron-apt, which reads that file alone, installs Keel fixes too.
+KEEL_SECURITY_SUITE="${KEEL_SECURITY_SUITE:-trixie-security}"
+KEEL_SECURITY_KEYRING_GPG="${KEEL_SECURITY_KEYRING_GPG:-/usr/share/keyrings/keel-security-keyring.gpg}"
 KEEL_FINGERPRINT_FILE="${KEEL_FINGERPRINT_FILE:-/usr/share/keel-archive-keyring/fingerprint}"
 KEEL_PIN_ORIGIN="${KEEL_PIN_ORIGIN:-Keel Linux}"
 # 990: above the 500 of every other archive, so the Keel build of a package
@@ -169,5 +176,5 @@ keyring_fingerprint() {
     tr -d '[:space:]' < "$file"
 }
 
-KEEL_TRANSITION_VERSION="0.2.1"
+KEEL_TRANSITION_VERSION="0.2.2"
 KEEL_CURL_TIMEOUT="${KEEL_CURL_TIMEOUT:-30}"

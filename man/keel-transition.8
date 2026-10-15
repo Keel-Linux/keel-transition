@@ -75,7 +75,12 @@ writes Debian's own
 .I debian.sources
 and
 .I security.sources
-with the suites and components the Debian stanzas had, then renames the
+with the suites and components the Debian stanzas had.
+.I security.sources
+also has the Keel security suite, trixie\-security, signed by the
+security key alone
+.RI ( /usr/share/keyrings/keel\-security\-keyring.gpg ),
+so the daily cron\-apt installs Keel fixes too. Then it renames the
 TurnKey files and the TurnKey pin to
 .IR <name>.disabled\-by\-keel ,
 and purges

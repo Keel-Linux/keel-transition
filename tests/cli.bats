@@ -10,7 +10,7 @@ teardown() { scratch_teardown; }
 @test "the executable prints its version" {
     run "$REPO/bin/keel-transition" --version
     [ "$status" -eq 0 ]
-    [ "$output" = "keel-transition 0.2.1" ]
+    [ "$output" = "keel-transition 0.2.2" ]
 }
 
 @test "the help says the three phases, the refusal, the pin and the one package removed" {
