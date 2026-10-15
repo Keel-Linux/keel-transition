@@ -153,3 +153,33 @@ turnkey_keys_restore() {
     saved="$(turnkey_keys_saved)"
     tar -C "${KEEL_ROOT:-/}" -xf "$saved" && rm -f "$saved"
 }
+
+# cronapt_saved ACTION: where --apply keeps the original of an install
+# action of cron-apt
+cronapt_saved() {
+    printf '%s/cron-apt/%s\n' "$(rooted "$KEEL_STATE_DIR")" "$(basename "$1")"
+}
+
+# cronapt_reads ACTION LIST: true when ACTION reads the source list LIST
+cronapt_reads() {
+    grep -qF "Dir::Etc::sourcelist=$2" "$(rooted "$1")"
+}
+
+# cronapt_point ACTION: keep the original, then point the action at
+# KEEL_SECURITY_SOURCES. An original that an earlier --apply kept stays.
+cronapt_point() {
+    local live saved
+    live="$(rooted "$1")"
+    saved="$(cronapt_saved "$1")"
+    mkdir -p "$(dirname "$saved")" || return 1
+    [ -e "$saved" ] || cp -p "$live" "$saved" || return 1
+    sed -i "s|Dir::Etc::sourcelist=$KEEL_TURNKEY_SECURITY_SOURCES|Dir::Etc::sourcelist=$KEEL_SECURITY_SOURCES|" "$live"
+}
+
+# cronapt_restore ACTION: the original back, byte for byte
+cronapt_restore() {
+    local saved
+    saved="$(cronapt_saved "$1")"
+    cp -p "$saved" "$(rooted "$1")" && rm -f "$saved" || return 1
+    rmdir "$(dirname "$saved")" 2> /dev/null || true
+}

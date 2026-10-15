@@ -72,6 +72,33 @@ SRC
     printf 'tkl trixie main key\n' > "$ROOT/usr/share/keyrings/tkl-trixie-main.asc"
     cp -a "$ROOT/etc/apt" "$TMP/apt.original"
     cp -a "$ROOT/usr/share/keyrings" "$TMP/keyrings.original"
+    cronapt_tree
+}
+
+# cronapt_tree: the install actions of cron-apt that TurnKey 19.0 writes
+# (common's conf/turnkey.d/cronapt before Keel): they read
+# security.sources.sources alone, the file --apply sets aside
+cronapt_tree() {
+    local dir="$ROOT/etc/cron-apt/action-available.d" kind
+    mkdir -p "$dir"
+    for kind in default alt; do
+        cat > "$dir/5-install.$kind" << ACTION
+autoclean -y
+dist-upgrade -y \\
+    -o APT::Get::Show-Upgraded=true \\
+    -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/security.sources.sources \\
+    -o Dir::Etc::sourceparts=nonexistent \\
+    -o DPkg::Options::=--force-confdef \\
+    -o DPkg::Options::=--force-confold
+ACTION
+    done
+    cp -a "$ROOT/etc/cron-apt" "$TMP/cronapt.original"
+}
+
+# cronapt_sourcelist KIND: the source list the install action KIND reads
+cronapt_sourcelist() {
+    sed -n 's|.*Dir::Etc::sourcelist=\([^ ]*\).*|\1|p' \
+        "$ROOT/etc/cron-apt/action-available.d/5-install.$1"
 }
 
 # stub_dpkg: dpkg-query answers from $TMP/pkgs ("name status version"),
@@ -303,4 +330,53 @@ make_archive() {
 
 @test "keel-transition depends on the keyring package that installs the security keyring" {
     grep -q 'keel-archive-keyring (>= 0.3.0)' "$BATS_TEST_DIRNAME/../debian/control"
+}
+
+@test "--apply points the install actions of cron-apt at security.sources" {
+    apply
+    [ "$status" -eq 0 ]
+    local kind list
+    for kind in default alt; do
+        list="$(cronapt_sourcelist "$kind")"
+        [ "$list" = /etc/apt/sources.list.d/security.sources ]
+        [ -f "$ROOT$list" ]
+        mkdir -p "$TMP/aptstate/lists/partial" "$TMP/aptstate/dpkg"
+        : > "$TMP/aptstate/dpkg/status"
+        # $(URI) is apt's format field
+        # shellcheck disable=SC2016
+        run apt-get -o Dir::Etc="$ROOT/etc/apt" -o Dir::State="$TMP/aptstate" \
+            -o Dir::State::status="$TMP/aptstate/dpkg/status" \
+            -o Dir::Etc::sourcelist="$ROOT$list" -o Dir::Etc::sourceparts=nonexistent \
+            indextargets --no-release-info --format '$(URI)'
+        [ "$status" -eq 0 ]
+        [ "$(sed -E 's|^([a-z]+://[^/]+/.*dists/[^/]+)/.*|\1|' <<< "$output" | sort -u)" = "$(printf 'http://security.debian.org/debian-security/dists/trixie-security\nhttps://archive.keellinux.org/dists/trixie-security')" ]
+    done
+    [[ "$output" != *turnkeylinux* ]]
+}
+
+@test "--apply twice keeps the install actions of cron-apt as the first one left them" {
+    apply
+    [ "$status" -eq 0 ]
+    cp -a "$ROOT/etc/cron-apt" "$TMP/cronapt.first"
+    apply
+    [ "$status" -eq 0 ]
+    run diff -r "$TMP/cronapt.first" "$ROOT/etc/cron-apt"
+    [ "$output" = "" ]
+}
+
+@test "--rollback puts the install actions of cron-apt back, byte for byte" {
+    apply
+    [ "$status" -eq 0 ]
+    rollback
+    [ "$status" -eq 0 ]
+    run diff -r "$TMP/cronapt.original" "$ROOT/etc/cron-apt"
+    [ "$output" = "" ]
+    [ ! -e "$ROOT/var/lib/keel/transition/cron-apt" ]
+}
+
+@test "an appliance without cron-apt gets no action file" {
+    rm -r "$ROOT/etc/cron-apt"
+    apply
+    [ "$status" -eq 0 ]
+    [ ! -e "$ROOT/etc/cron-apt" ]
 }

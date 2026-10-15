@@ -51,6 +51,12 @@ KEEL_DEBIAN_SOURCES="${KEEL_DEBIAN_SOURCES:-/etc/apt/sources.list.d/debian.sourc
 KEEL_SECURITY_SOURCES="${KEEL_SECURITY_SOURCES:-/etc/apt/sources.list.d/security.sources}"
 KEEL_DEBIAN_KEYRING="${KEEL_DEBIAN_KEYRING:-/usr/share/keyrings/debian-archive-keyring.gpg}"
 KEEL_STATE_DIR="${KEEL_STATE_DIR:-/var/lib/keel/transition}"
+# The install actions of cron-apt that TurnKey 19.0 writes (common's
+# conf/turnkey.d/cronapt). They read security.sources.sources alone, the
+# file --apply sets aside, so --apply points them at KEEL_SECURITY_SOURCES
+# and keeps each original for --rollback.
+KEEL_CRONAPT_ACTIONS="${KEEL_CRONAPT_ACTIONS:-/etc/cron-apt/action-available.d/5-install.default /etc/cron-apt/action-available.d/5-install.alt}"
+KEEL_TURNKEY_SECURITY_SOURCES="${KEEL_TURNKEY_SECURITY_SOURCES:-/etc/apt/sources.list.d/security.sources.sources}"
 
 # The line every file this tool writes carries, and the only licence it has
 # to remove one again: a file without it was written by somebody else.
@@ -176,5 +182,5 @@ keyring_fingerprint() {
     tr -d '[:space:]' < "$file"
 }
 
-KEEL_TRANSITION_VERSION="0.2.2"
+KEEL_TRANSITION_VERSION="0.2.3"
 KEEL_CURL_TIMEOUT="${KEEL_CURL_TIMEOUT:-30}"

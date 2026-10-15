@@ -127,6 +127,8 @@ repository only):
 
      create   /etc/apt/sources.list.d/debian.sources     deb822, Debian
      create   /etc/apt/sources.list.d/security.sources   deb822, Debian; Keel trixie-security
+     update   /etc/cron-apt/action-available.d/5-install.default  reads security.sources
+     update   /etc/cron-apt/action-available.d/5-install.alt      reads security.sources
      rename   /etc/apt/sources.list.d/sources.sources    to sources.sources.disabled-by-keel
      rename   /etc/apt/sources.list.d/security.sources.sources  to ...disabled-by-keel
      rename   /etc/apt/sources.list.d/turnkey-testing.sources   to ...disabled-by-keel
@@ -139,7 +141,11 @@ stanzas had. ``security.sources`` also has the Keel security suite,
 /usr/share/keyrings/keel-security-keyring.gpg`` (handbook decision 0055).
 The daily cron-apt reads that file alone, so after a transition it
 installs the fixes to Keel packages the same way as Debian's.
-``keel-archive-keyring`` 0.3.0 and later installs that keyring. The TurnKey files are renamed only once Debian's are
+``keel-archive-keyring`` 0.3.0 and later installs that keyring. The
+install actions of cron-apt that TurnKey 19.0 writes read
+``security.sources.sources``, which ``--apply`` sets aside, so ``--apply``
+points them at ``security.sources`` and keeps each original in
+``/var/lib/keel/transition/cron-apt`` for ``--rollback``. The TurnKey files are renamed only once Debian's are
 written, so Debian is never left without a source. Each of these is a
 refusal instead, and then nothing is purged: a ``debian.sources`` or
 ``security.sources`` this tool did not write, an ``/etc/apt/preferences``
@@ -245,7 +251,7 @@ first, from the archive or from Keel-Linux/keel-keys:
 .. code-block:: console
 
    $ dpkg-buildpackage -us -uc -b
-   # dpkg -i ../keel-transition_0.2.2_all.deb
+   # dpkg -i ../keel-transition_0.2.3_all.deb
 
 or, on the build host, with the apt tooling, which detects this as a
 native package because its source name starts with ``keel`` and it

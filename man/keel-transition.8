@@ -80,7 +80,15 @@ with the suites and components the Debian stanzas had.
 also has the Keel security suite, trixie\-security, signed by the
 security key alone
 .RI ( /usr/share/keyrings/keel\-security\-keyring.gpg ),
-so the daily cron\-apt installs Keel fixes too. Then it renames the
+so the daily cron\-apt installs Keel fixes too. The install actions of
+cron\-apt
+.RI ( /etc/cron\-apt/action\-available.d/5\-install.default
+and
+.IR 5\-install.alt )
+read security.sources.sources, so it points them at security.sources and
+keeps each original in
+.I /var/lib/keel/transition/cron\-apt
+for \-\-rollback. Then it renames the
 TurnKey files and the TurnKey pin to
 .IR <name>.disabled\-by\-keel ,
 and purges

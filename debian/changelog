@@ -1,3 +1,16 @@
+keel-transition (0.2.3) trixie; urgency=medium
+
+  * --apply points the install actions of cron-apt at security.sources.
+    TurnKey 19.0 writes /etc/cron-apt/action-available.d/5-install.default
+    and 5-install.alt with Dir::Etc::sourcelist
+    /etc/apt/sources.list.d/security.sources.sources, the file that
+    --apply sets aside. So after a transition the daily cron-apt read a
+    missing file and installed no security update, Debian's or Keel's.
+    --apply keeps each original in /var/lib/keel/transition/cron-apt,
+    and --rollback puts it back byte for byte.
+
+ -- Marcos Mendez <mendez.foto@gmail.com>  Fri, 16 Oct 2026 00:30:00 +0000
+
 keel-transition (0.2.2) trixie; urgency=medium
 
   * --apply writes the Keel security suite into security.sources, after
