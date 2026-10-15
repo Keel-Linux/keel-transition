@@ -58,7 +58,9 @@ debian_field() {
 }
 
 # debian_render KIND: the deb822 file for KIND, debian or security, with
-# the components and the release the appliance's own Debian stanza had
+# the components and the release the appliance's own Debian stanza had.
+# The security file also has the Keel security suite, after Debian's
+# stanza (security_keel_render).
 debian_render() {
     local codename components uri suites path
     codename="$(debian_field deb.debian.org Suites | awk '{ print $1 }')" || true
@@ -79,6 +81,20 @@ debian_render() {
     printf 'Types: deb\nURIs: %s\nSuites: %s\nComponents: %s\n' \
         "$uri" "$suites" "${components:-main non-free-firmware}"
     printf 'Signed-By: %s\n' "$KEEL_DEBIAN_KEYRING"
+    if [ "$1" = security ]; then
+        security_keel_render
+    fi
+}
+
+# security_keel_render: the stanza of the Keel security suite (handbook
+# decision 0055), signed by the security key alone. The daily cron-apt
+# reads security.sources and no other file, so with this stanza a fix to a
+# Keel package arrives the same way a Debian fix arrives.
+security_keel_render() {
+    printf '\n# Keel Linux security updates, signed by the security key alone.\n'
+    printf 'Types: deb\nURIs: %s\nSuites: %s\nComponents: %s\n' \
+        "$KEEL_ARCHIVE_URI" "$KEEL_SECURITY_SUITE" "$KEEL_ARCHIVE_COMPONENTS"
+    printf 'Signed-By: %s\n' "$KEEL_SECURITY_KEYRING_GPG"
 }
 
 # turnkey_pin_only FILE: true when every stanza of FILE pins o=turnkeylinux,

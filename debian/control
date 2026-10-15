@@ -13,7 +13,7 @@ Package: keel-transition
 Architecture: all
 Depends:
  keel,
- keel-archive-keyring (>= 0.2.0),
+ keel-archive-keyring (>= 0.3.0),
  curl,
  gpgv,
  ${misc:Depends},

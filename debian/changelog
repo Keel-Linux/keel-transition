@@ -1,3 +1,16 @@
+keel-transition (0.2.2) trixie; urgency=medium
+
+  * --apply writes the Keel security suite into security.sources, after
+    the Debian stanza: trixie-security of archive.keellinux.org, with
+    Signed-By /usr/share/keyrings/keel-security-keyring.gpg (handbook
+    decision 0055). The daily cron-apt reads security.sources alone, so
+    after a transition it installs the fixes to Keel packages the same
+    way as Debian's. The plan line of security.sources names both.
+  * keel-transition depends on keel-archive-keyring (>= 0.3.0), the first
+    version that installs the security keyring.
+
+ -- Marcos Mendez <mendez.foto@gmail.com>  Thu, 15 Oct 2026 23:00:00 +0000
+
 keel-transition (0.2.1) trixie; urgency=medium
 
   * This source no longer builds keel-archive-keyring. The package is now

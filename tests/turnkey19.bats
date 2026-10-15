@@ -270,3 +270,37 @@ make_archive() {
     grep -qx 'Components: main non-free-firmware' "$SECURITY"
     [ -f "$D/turnkey-testing.sources.disabled-by-keel" ]
 }
+
+# ------------------------------- the Keel security suite (decision 0055)
+
+@test "--apply writes the Keel security suite into security.sources, with the security keyring" {
+    apply
+    [ "$status" -eq 0 ]
+    keel="$(awk 'BEGIN { RS = "" } /archive\.keellinux\.org/' "$SECURITY")"
+    [ "$(awk '/^URIs:/ { print $2 }' <<< "$keel")" = https://archive.keellinux.org ]
+    [ "$(awk '/^Suites:/ { print $2 }' <<< "$keel")" = trixie-security ]
+    [ "$(awk '/^Components:/ { print $2 }' <<< "$keel")" = main ]
+    [ "$(awk '/^Signed-By:/ { print $2 }' <<< "$keel")" = /usr/share/keyrings/keel-security-keyring.gpg ]
+    # Debian's stanza stays the first one, as before
+    debian="$(awk 'BEGIN { RS = "" } /security\.debian\.org/' "$SECURITY")"
+    [ "$(awk '/^Signed-By:/ { print $2 }' <<< "$debian")" = /usr/share/keyrings/debian-archive-keyring.gpg ]
+}
+
+@test "cron-apt, which reads security.sources alone, gets Debian security and Keel security after --apply" {
+    apply
+    [ "$status" -eq 0 ]
+    mkdir -p "$TMP/aptstate/lists/partial" "$TMP/aptstate/dpkg"
+    : > "$TMP/aptstate/dpkg/status"
+    # $(URI) is apt's format field
+    # shellcheck disable=SC2016
+    run apt-get -o Dir::Etc="$ROOT/etc/apt" -o Dir::State="$TMP/aptstate" \
+        -o Dir::State::status="$TMP/aptstate/dpkg/status" \
+        -o Dir::Etc::sourcelist="$SECURITY" -o Dir::Etc::sourceparts=/dev/null \
+        indextargets --no-release-info --format '$(URI)'
+    [ "$status" -eq 0 ]
+    [ "$(sed -E 's|^([a-z]+://[^/]+/.*dists/[^/]+)/.*|\1|' <<< "$output" | sort -u)" = "$(printf 'http://security.debian.org/debian-security/dists/trixie-security\nhttps://archive.keellinux.org/dists/trixie-security')" ]
+}
+
+@test "keel-transition depends on the keyring package that installs the security keyring" {
+    grep -q 'keel-archive-keyring (>= 0.3.0)' "$BATS_TEST_DIRNAME/../debian/control"
+}

@@ -94,6 +94,14 @@ plan_apply_keel() {
     esac
 }
 
+# plan_debian_note KIND: what the file of KIND, debian or security, holds
+plan_debian_note() {
+    printf 'deb822, Debian, Signed-By %s' "$KEEL_DEBIAN_KEYRING"
+    if [ "$1" = security ]; then
+        printf '; Keel %s, Signed-By %s' "$KEEL_SECURITY_SUITE" "$KEEL_SECURITY_KEYRING_GPG"
+    fi
+}
+
 # plan_apply_debian: Debian's own sources, in place of TurnKey's shared
 # deb822 files, and those files set aside only when Debian's could be
 # written, so Debian is never left without a source.
@@ -103,8 +111,8 @@ plan_apply_debian() {
     for kind in debian security; do
         if [ "$kind" = debian ]; then path="$(rooted "$KEEL_DEBIAN_SOURCES")"; else path="$(rooted "$KEEL_SECURITY_SOURCES")"; fi
         case "$(state_file "$path")" in
-            absent) printf 'create-%s\t%s\tdeb822, Debian, Signed-By %s\n' "$kind" "$path" "$KEEL_DEBIAN_KEYRING" ;;
-            ours) printf 'update-%s\t%s\tdeb822, Debian, Signed-By %s\n' "$kind" "$path" "$KEEL_DEBIAN_KEYRING" ;;
+            absent) printf 'create-%s\t%s\t%s\n' "$kind" "$path" "$(plan_debian_note "$kind")" ;;
+            ours) printf 'update-%s\t%s\t%s\n' "$kind" "$path" "$(plan_debian_note "$kind")" ;;
             *) printf 'conflict-%s\t%s\tnot written by this tool: left untouched\n' "$kind" "$path"; written=no ;;
         esac
     done
