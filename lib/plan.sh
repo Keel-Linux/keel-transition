@@ -102,6 +102,23 @@ plan_debian_note() {
     fi
 }
 
+# plan_apply_cronapt: the install actions of cron-apt that read
+# security.sources.sources, which --apply sets aside, point at
+# KEEL_SECURITY_SOURCES. Without it the daily cron-apt installs no security
+# update after a transition, Debian's or Keel's.
+plan_apply_cronapt() {
+    local action
+    for action in $KEEL_CRONAPT_ACTIONS; do
+        [ -f "$(rooted "$action")" ] || continue
+        if cronapt_reads "$action" "$KEEL_TURNKEY_SECURITY_SOURCES"; then
+            printf 'update-cronapt\t%s\treads %s, the original kept in %s\n' \
+                "$(rooted "$action")" "$KEEL_SECURITY_SOURCES" "$(cronapt_saved "$action")"
+        elif cronapt_reads "$action" "$KEEL_SECURITY_SOURCES"; then
+            printf 'keep-cronapt\t%s\talready reads %s\n' "$(rooted "$action")" "$KEEL_SECURITY_SOURCES"
+        fi
+    done
+}
+
 # plan_apply_debian: Debian's own sources, in place of TurnKey's shared
 # deb822 files, and those files set aside only when Debian's could be
 # written, so Debian is never left without a source.
@@ -116,6 +133,7 @@ plan_apply_debian() {
             *) printf 'conflict-%s\t%s\tnot written by this tool: left untouched\n' "$kind" "$path"; written=no ;;
         esac
     done
+    [ "$written" = no ] || plan_apply_cronapt
     for name in $KEEL_TURNKEY_DEB822; do
         live="$(turnkey_deb822_path "$name")"
         if [ -e "$live" ] && [ -e "$live$KEEL_DISABLED_SUFFIX" ]; then
@@ -174,6 +192,10 @@ plan_rollback_turnkey() {
             printf 'restore-tkfile\t%s\tfrom %s%s, byte for byte\n' "$live" "${live##*/}" "$KEEL_DISABLED_SUFFIX"
         fi
     done
+    for name in $KEEL_CRONAPT_ACTIONS; do
+        [ -f "$(cronapt_saved "$name")" ] || continue
+        printf 'unpack-cronapt\t%s\tfrom %s, byte for byte\n' "$(rooted "$name")" "$(cronapt_saved "$name")"
+    done
     prefs="$(turnkey_keys_saved)"
     if [ -f "$prefs" ]; then
         printf 'unpack-turnkeykeys\tturnkey-keys\tits files are back; reinstall the package with: apt-get update && apt-get install turnkey-keys\n'
@@ -223,6 +245,10 @@ plan_execute() {
                     rc=$EXIT_WRITE_FAILED ;;
             create-debian | update-debian | create-security | update-security)
                 write_file "$path" "$(debian_render "${op#*-}")" || rc=$EXIT_WRITE_FAILED ;;
+            update-cronapt)
+                cronapt_point "${path#"$KEEL_ROOT"}" || rc=$EXIT_WRITE_FAILED ;;
+            unpack-cronapt)
+                cronapt_restore "${path#"$KEEL_ROOT"}" || rc=$EXIT_ROLLBACK_INCOMPLETE ;;
             disable-turnkey | disable-tkfile | disable-tkpin)
                 mv "$path" "$path$KEEL_DISABLED_SUFFIX" || rc=$EXIT_WRITE_FAILED ;;
             restore-turnkey | restore-tkfile)
