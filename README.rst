@@ -152,6 +152,29 @@ refusal instead, and then nothing is purged: a ``debian.sources`` or
 with pins besides TurnKey's, or a TurnKey stanza in a file this tool does
 not know.
 
+An appliance transitioned by 0.2.0 to 0.2.2
+```````````````````````````````````````````
+
+keel-transition 0.2.0 to 0.2.2 set ``security.sources.sources`` aside and
+did not change the install actions of cron-apt. On such an appliance the
+daily cron-apt reads a file that is not there, and installs no security
+update, Debian's or Keel's. cron-apt exits 0 and says nothing. cron-apt
+cannot bring the fix, so do these steps by hand, as root:
+
+.. code-block:: console
+
+   # apt-get update
+   # apt-get install keel-transition
+   # keel-transition --apply
+
+``--apply`` of 0.2.3 points both actions at ``security.sources`` and keeps
+each original for ``--rollback``. To check the result:
+
+.. code-block:: console
+
+   # grep -o 'sourcelist=[^ ]*' /etc/cron-apt/action.d/5-install
+   sourcelist=/etc/apt/sources.list.d/security.sources
+
 Phase 3: ``--rollback``
 -----------------------
 
